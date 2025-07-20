@@ -12,14 +12,42 @@ Block::Block(Block* prevBlock) {
     }
     Nonce=0; 
     createTimestamp=time(0); 
-    DataSize=0; 
     calculateHash(); 
 }
 
 Block::~Block() {}
 
 void Block::calculateHash() {
+    std::string sum; 
+    for (const auto& tx: transactions) {
+        sum+=tx.gpsLocation;
+        sum+=tx.greenActionType;
+        sum+=tx.userID; 
+        sum+=std::to_string(tx.timestamp); 
+        sum+=std::to_string(tx.greenPoints);
+    }
 
+    uint32_t buffersize=SHA256_DIGEST_LENGTH+sizeof(time_t)+sum.size()+sizeof(uint32_t); 
+    uint8_t* buf=new uint8_t[buffersize]; 
+    uint8_t* ptr=buf; 
+    memcpy(ptr, PreviousHash, SHA256_DIGEST_LENGTH*sizeof(uint8_t));
+    ptr+=SHA256_DIGEST_LENGTH*sizeof(uint8_t);
+
+    memcpy(ptr, &createTimestamp, sizeof(time_t));
+    ptr+=sizeof(time_t); 
+
+    memcpy(ptr, &Nonce, sizeof(uint32_t));
+    ptr+=sizeof(uint32_t);
+
+    memcpy(ptr, sum.c_str(), sum.size()); 
+
+    SHA256_CTX sha256; 
+    SHA256_Init(&sha256); 
+    SHA256_Update(&sha256, buf, buffersize);
+    SHA256_Final(Hash, &sha256); 
+    
+    delete[] buf; 
+    
 }
 
 const uint8_t* Block::getHash() const {
@@ -72,7 +100,37 @@ void Block::mine(int difficulty) {
 }
 
 bool Block::verifyHash() const {
-    uint8_t tmpHash[SHA256_DIGEST_LENGTH]; 
+    uint8_t tmpHash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256; 
+    SHA256_Init(&sha256);
+    std::string sum; 
+    for (const auto& tx: transactions) {
+        sum+=tx.gpsLocation;
+        sum+=tx.greenActionType;
+        sum+=tx.userID; 
+        sum+=std::to_string(tx.timestamp); 
+        sum+=std::to_string(tx.greenPoints);
+    }
 
+    uint32_t buffersize=SHA256_DIGEST_LENGTH+sizeof(time_t)+sum.size()+sizeof(uint32_t); 
+    uint8_t* buf=new uint8_t[buffersize]; 
+    uint8_t* ptr=buf; 
+    memcpy(ptr, PreviousHash, SHA256_DIGEST_LENGTH*sizeof(uint8_t));
+    ptr+=SHA256_DIGEST_LENGTH*sizeof(uint8_t);
+
+    memcpy(ptr, &createTimestamp, sizeof(time_t));
+    ptr+=sizeof(time_t); 
+
+    memcpy(ptr, &Nonce, sizeof(uint32_t));
+    ptr+=sizeof(uint32_t);
+
+    memcpy(ptr, sum.c_str(), sum.size()); 
+
+    SHA256_Update(&sha256, buf, buffersize);
+    SHA256_Final(tmpHash, &sha256); 
+    
+    delete[] buf; 
+
+    return memcmp(tmpHash, Hash, SHA256_DIGEST_LENGTH)==0;
 }
 

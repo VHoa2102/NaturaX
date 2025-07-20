@@ -12,7 +12,7 @@
 
 namespace blockchain {
     struct Transaction {
-        std::string timestamp; 
+        time_t timestamp; 
         std::string gpsLocation; 
         std::string userID; 
         std::string greenActionType; 
@@ -24,7 +24,6 @@ namespace blockchain {
         uint8_t PreviousHash[SHA256_DIGEST_LENGTH];             //mã băm block trước
         Block* prevBlock;                                       //con trỏ trỏ đến block trước, trỏ null
         std::vector<Transaction> transactions;  
-        uint32_t DataSize;
         time_t createTimestamp; 
         uint32_t Nonce; 
     public: 
@@ -36,7 +35,6 @@ namespace blockchain {
         Block* getprevBlock();                                  //hàm gettter Block trước đó
         std::vector<Transaction> getTransaction() const;        //getter transaction ra (struct ở trên)
         bool addTransaction(const Transaction& tx);             //thêm transaction vào blockchain
-        //uint32_t getDataSize() const; 
         uint32_t getNonce() const; 
         time_t getTimestamp() const; 
         bool isDifficult(int difficulty);                       //xét proof of work, nếu thoả thì thêm vào blockchain
